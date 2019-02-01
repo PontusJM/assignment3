@@ -59,45 +59,41 @@ data HuffmanTree = Leaf Char Int | Node (HuffmanTree) Int (HuffmanTree) deriving
    EXAMPLES:
  -}
 huffmanTree :: Table Char Int -> HuffmanTree
-huffmanTree = undefined
+huffmanTree t = huffmanTreeAux (toPriorityQueue t)
 
-toPriorityQueue :: [HuffmanTree] -> PriorityQueue HuffmanTree
-toPriorityQueue [] = PriorityQueue.empty
-toPriorityQueue (t@(Leaf _ n):ts) = PriorityQueue.insert (toPriorityQueue ts) (t,n)
-toPriorityQueue (t@(Node _ n _):ts) = PriorityQueue.insert (toPriorityQueue ts) (t,n)
+huffmanTreeAux :: PriorityQueue HuffmanTree -> HuffmanTree
+huffmanTreeAux q
+  | PriorityQueue.is_empty q1 = v1
+  | otherwise = huffmanTreeAux $ PriorityQueue.insert (q2) (Node v1 (p1+p1) v2,(p1+p2))
+  where
+    ((v1,p1),q1) = least q
+    ((v2,p2),q2) = least q1
 
-huffmanTreeAux :: Table Char Int -> PriorityQueue HuffmanTree
-huffmanTreeAux t =
+toPriorityQueue :: Table Char Int -> PriorityQueue HuffmanTree
+toPriorityQueue t =
   let
-    insertLeaf :: [HuffmanTree] -> (Char,Int) -> [HuffmanTree]
-    insertLeaf ts (c,n) = (Leaf c n) : ts
+    buildTrees :: [HuffmanTree] -> (Char,Int) -> [HuffmanTree]
+    buildTrees ts (c,n) = (Leaf c n) : ts
   in
-    let h = Table.iterate t insertLeaf [] in toPriorityQueue h
+    toPriorityQueueAux (Table.iterate t buildTrees [])
 
-
-
-{-
-testFunc2 t =
-  let
-    f = toLeaf
-  in
-    Table.iterate t f []
--}
-
-toLeaf :: (Char,Int) -> [HuffmanTree] -> [HuffmanTree]
-toLeaf (c,n) t = (Leaf c n) : t
---huffmanTreeAux :: Table Char Int -> PriorityQueue Char -> PriorityQueue Char
-
-
---buildPriorityQueue :: PriorityQueue a -> (a,Int) -> 
+toPriorityQueueAux :: [HuffmanTree] -> PriorityQueue HuffmanTree
+toPriorityQueueAux [] = PriorityQueue.empty
+toPriorityQueueAux (t@(Leaf _ n):ts) = PriorityQueue.insert (toPriorityQueueAux ts) (t,n)
+toPriorityQueueAux (t@(Node _ n _):ts) = PriorityQueue.insert (toPriorityQueueAux ts) (t,n)
 
 {- codeTable h
    RETURNS: a table that maps each character in h to its Huffman code
    EXAMPLES:
  -}
 codeTable :: HuffmanTree -> Table Char BitCode
-codeTable h = undefined
+codeTable h = codeTableAcc h Table.empty []
 
+codeTableAcc :: HuffmanTree -> Table Char BitCode -> BitCode -> Table Char BitCode
+codeTableAcc (Leaf x _) t bc = Table.insert t x bc
+codeTableAcc (Node l _ r) t bc = (codeTableAcc l t (bc ++ [False]))
+-- ++ (codeTableAcc r t (bc ++ [True]))
+--codeTableAcc (Node _ _ r) t bc = codeTableAcc r t (bc ++ [True])
 
 {- compress s
    RETURNS: (a Huffman tree based on s, the Huffman coding of s under this tree)
