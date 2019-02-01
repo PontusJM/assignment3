@@ -52,7 +52,6 @@ sub-trees with smaller character counts.
 -}
 data HuffmanTree = Leaf Char Int | Node (HuffmanTree) Int (HuffmanTree) deriving Show
 
-
 {- huffmanTree t
    PRE:  t maps each key to a positive value
    RETURNS: a Huffman tree based on the character counts in t
@@ -64,7 +63,7 @@ huffmanTree t = huffmanTreeAux (toPriorityQueue t)
 huffmanTreeAux :: PriorityQueue HuffmanTree -> HuffmanTree
 huffmanTreeAux q
   | PriorityQueue.is_empty q1 = v1
-  | otherwise = huffmanTreeAux $ PriorityQueue.insert (q2) (Node v1 (p1+p1) v2,(p1+p2))
+  | otherwise = huffmanTreeAux $ PriorityQueue.insert (q2) (Node v1 (p1+p2) v2,(p1+p2))
   where
     ((v1,p1),q1) = least q
     ((v2,p2),q2) = least q1
@@ -82,25 +81,54 @@ toPriorityQueueAux [] = PriorityQueue.empty
 toPriorityQueueAux (t@(Leaf _ n):ts) = PriorityQueue.insert (toPriorityQueueAux ts) (t,n)
 toPriorityQueueAux (t@(Node _ n _):ts) = PriorityQueue.insert (toPriorityQueueAux ts) (t,n)
 
+--TESTING
+x = characterCounts "this is an example of a huffman tree"
+h = huffmanTree x
+ct = codeTable h
+b = "this is an example of a huffman tree"
 {- codeTable h
    RETURNS: a table that maps each character in h to its Huffman code
    EXAMPLES:
+      codeTable Node (Leaf 'h' 1) 3 (Node (Leaf 'j' 1) 2 (Leaf 'e' 1)) =
+      T [('e',[True,True]),('j',[True,False]),('h',[False])]
  -}
 codeTable :: HuffmanTree -> Table Char BitCode
-codeTable h = codeTableAcc h Table.empty []
+codeTable h = codeTableAcc h [] 
 
-codeTableAcc :: HuffmanTree -> Table Char BitCode -> BitCode -> Table Char BitCode
-codeTableAcc (Leaf x _) t bc = Table.insert t x bc
-codeTableAcc (Node l _ r) t bc = (codeTableAcc l t (bc ++ [False]))
--- ++ (codeTableAcc r t (bc ++ [True]))
---codeTableAcc (Node _ _ r) t bc = codeTableAcc r t (bc ++ [True])
+bitCode :: String -> Table Char BitCode -> BitCode
+bitCode [] t = []
+bitCode (x:xs) t = bc ++ bitCode xs t 
+  where bc = case Table.lookup t x of Just x -> x
+  
+
+codeTableAcc :: HuffmanTree -> BitCode -> Table Char BitCode
+codeTableAcc (Leaf c n) bc = Table.insert (Table.empty) c bc
+codeTableAcc (Node l _ r) bc =
+  mergeTables x xs
+  where
+    x = codeTableAcc l (bc ++ [False])
+    xs = codeTableAcc r (bc ++ [True])
+
+mergeTables :: Eq a => Table a b -> Table a b -> Table a b
+mergeTables t1 t2 =
+  let
+    insertElement :: Eq a => Table a b -> (a,b) -> Table a b
+    insertElement ts e = Table.insert ts (fst e) (snd e)
+  in
+    Table.iterate t1 insertElement t2
 
 {- compress s
    RETURNS: (a Huffman tree based on s, the Huffman coding of s under this tree)
    EXAMPLES:
  -}
 compress :: String -> (HuffmanTree, BitCode)
-compress s = undefined
+compress b =
+  let
+    cc = characterCounts
+    ht = huffmanTree
+    ct = codeTable
+  in
+    (huffmanTree (characterCounts b), bitCode b (ct(ht(cc b))))
 
 
 {- decompress h bits
@@ -109,8 +137,17 @@ compress s = undefined
    EXAMPLES:
  -}
 decompress :: HuffmanTree -> BitCode -> String
-decompress h bits = undefined
+decompress _ [] = []
+decompress t bc =
+  let (c,bits) = decompressAux t bc in
+    c : (decompress t bits)
 
+decompressAux :: HuffmanTree  -> BitCode -> (Char, BitCode)
+decompressAux (Leaf c _) [] = (c, [])
+decompressAux (Leaf c _) (bit:bits) = (c,(bit:bits))
+decompressAux (Node l _ r) (bit:bits)
+  | bit == True = decompressAux r bits
+  | bit == False = decompressAux l bits
 
 --------------------------------------------------------------------------------
 -- Test Cases
