@@ -173,6 +173,7 @@ bitCode (x:xs) t = bc ++ bitCode xs t
  -}
 compress :: String -> (HuffmanTree, BitCode) 
 compress "" = (Leaf ' ' 0, [])
+compress [s] = (Leaf s 1, [])
 compress b =
   let
     cc = characterCounts
