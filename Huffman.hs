@@ -48,32 +48,29 @@ insertionSort xs = insertionSortAux [] xs where
    EXAMPLES: characterCounts "hello there" = T [('t',1),('r',1),('o',1),('l',2),('h',2),('e',3),(' ',1)]
  -}
 characterCounts :: String -> Table Char Int
-characterCounts s = characterCountsAux (insertionSort s) 1
-
-{- characterCountsAux s q
+characterCounts s = characterCountsAux (insertionSort s) 1 where
+  {- characterCountsAux s q
    Creates a table consisting of the characters from the given string and the
    amount of times each character occurs in the given string
    PRECONDITION: s is sorted
    RETURNS:  A table that maps each character that occurs in s to the number of
             times the character occurs in s
    EXAMPLE: characterCountsAux "hej" 1 = T [('j',1),('e',1),('h',1)]
--}
+  -}
+  characterCountsAux :: String -> Int -> Table Char Int
+  characterCountsAux [] _ = Table.empty
+  characterCountsAux [x] n = Table.insert (Table.empty) x n
+  characterCountsAux (x:y:xs) n 
+    | x == y = characterCountsAux (y:xs) (n+1)
+    | otherwise = Table.insert (characterCountsAux (y:xs) 1) x n
 
 -- bug, den plusar ej på 1 om inte två karaktärer som är lika kommer direkt efter varandra
 -- juste, så de är precondition då, eftersom jag har konstruerat funktionen utifrån antagandet att strängen är sorterad
-
-characterCountsAux :: String -> Int -> Table Char Int
-characterCountsAux [] _ = Table.empty
-characterCountsAux [x] n = Table.insert (Table.empty) x n
-characterCountsAux (x:y:xs) n 
-  | x == y = characterCountsAux (y:xs) (n+1)
-  | otherwise = Table.insert (characterCountsAux (y:xs) 1) x n
 
 {-
 INVARIANT: sub-trees with larger character counts do not occur at a lower level of the tree than
 sub-trees with smaller character counts.
 -}
-
 data HuffmanTree = Leaf Char Int | Node (HuffmanTree) Int (HuffmanTree) deriving Show
 
 
@@ -84,8 +81,7 @@ data HuffmanTree = Leaf Char Int | Node (HuffmanTree) Int (HuffmanTree) deriving
    Node (Node (Leaf 'l' 2) 4 (Leaf 'h' 2)) 11 (Node (Leaf 'e' 3) 7 (Node (Node (   Leaf ' ' 1) 2 (Leaf 'r' 1)) 4 (Node (Leaf 't' 1) 2 (Leaf 'o' 1))))
  -}
 huffmanTree :: Table Char Int -> HuffmanTree
-huffmanTree t = huffmanTreeAux (toPriorityQueue t) 
-  where
+huffmanTree t  = huffmanTreeAux (toPriorityQueue t) where
     --huffmanTreeAux q
     --performs the insertion algorithm for huffman trees based on a the priorityqueue q
     --VARIANT: length q
@@ -175,14 +171,15 @@ bitCode (x:xs) t = bc ++ bitCode xs t
    EXAMPLES: compress "hej" = (Node (Leaf 'h' 1) 3 (Node (Leaf 'j' 1) 2 (Leaf
              'e' 1)),[False,True,True,True,False])
  -}
-compress :: String -> (HuffmanTree, BitCode)
+compress :: String -> (HuffmanTree, BitCode) 
+compress "" = (Leaf ' ' 0, [])
 compress b =
   let
     cc = characterCounts
     ht = huffmanTree
     ct = codeTable
   in
-    (huffmanTree (characterCounts b), bitCode b (ct(ht(cc b))))
+    (ht (cc b), bitCode b (ct(ht(cc b))))
 
 {- decompress h bits
    Decodes the given BitCode that is associated to the given Huffman tree
