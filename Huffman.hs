@@ -75,7 +75,7 @@ data HuffmanTree = Leaf Char Int | Node (HuffmanTree) Int (HuffmanTree) deriving
 
 
 {- huffmanTree t
-   PRE:  t maps each key to a positive value
+   PRE:  t maps each key to a positive value, t is not empty
    RETURNS: a Huffman tree based on the character counts in t
    EXAMPLES: huffmanTree (characterCounts "hello there") =
    Node (Node (Leaf 'l' 2) 4 (Leaf 'h' 2)) 11 (Node (Leaf 'e' 3) 7 (Node (Node (   Leaf ' ' 1) 2 (Leaf 'r' 1)) 4 (Node (Leaf 't' 1) 2 (Leaf 'o' 1))))
